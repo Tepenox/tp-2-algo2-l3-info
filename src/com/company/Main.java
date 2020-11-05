@@ -1,4 +1,3 @@
-package com.company;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -12,23 +11,45 @@ import static java.util.stream.Collectors.toMap;
 public class Main {
 
 
+    private static Map<String, List<String>> trigrammsMap;
+
     public static void main(String[] args) {
 
         long startTime = System.currentTimeMillis();
 
-        Map<String, List<String>> trigrammsMap = new HashMap<>();
-        String input = "annuler";
-        List<String> associatedWords = new ArrayList<>();
+        Set<String> dicWords = buildDicSet("C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\dico.txt");
+        /*
+        //Reading fautes.txt
+        BufferedReader reader;
+        try {
+            reader = new BufferedReader(new FileReader("C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\fautes.txt"));
+            String line = reader.readLine();
+            while (line != null) {
 
-        Set<String> dicWords = new HashSet<>();
+                // read next line
+                line = reader.readLine();
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+        correctWord("annler",dicWords);
+
+        long endTime = System.currentTimeMillis();
+
+        System.out.println(TimeUnit.MILLISECONDS.toSeconds(endTime - startTime));
+        //TODO : Cédric run it in 6 sec, goal : run it in less
+    }
+
+    private static Set<String> buildDicSet(String path) {
+        Set<String> result = new HashSet<>();
 
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(
-                    "C:\\Users\\Tepenox\\IdeaProjects\\tp 2 algo2 l3 info\\src\\com\\company\\dico.txt"));
+            reader = new BufferedReader(new FileReader(path));
             String line = reader.readLine();
             while (line != null) {
-                dicWords.add(line);
+                result.add(line);
                 // read next line
                 line = reader.readLine();
             }
@@ -36,22 +57,70 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return result;
+    }
 
-        //1
-            if (dicWords.contains(input)){
-                System.out.println("the word is correct");
-                System.exit(0);
-            }
+    private static void correctWord(String input,Set<String> dicWords) {
 
+        List<String> associatedWords = new ArrayList<>();
 
+        //1 est-ce que le mot est juste ?
+        if(isCorrect(dicWords,input)){
+            //System.out.println("word is true done processing");
+            System.exit(0);
+        }
+        //System.out.println("word is wrong, im gonna show possible correction");
 
         // 2 construire la liste de trigrame de mot M
+        constructTrigramMap(input);
+        //System.out.println("done contructTrigramMap");
+
+        //3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
+        processMapTrigram(dicWords,associatedWords);
+        //System.out.println("done processMapTrigram");
+
+        //4 . pour chaque mot de L, calculer son nombre d’occurrences dans les listes de mots associées
+        //aux trigrammes de M,
+        Map<String, Integer> wordsOccurrences = countNbOccurrences(associatedWords);
+        //System.out.println("done count NB Ocurrences");
+
+        //5. sélectionner les mots du dictionnaire qui ont le plus de trigrammes communs avec M
+        wordsOccurrences = wordsOccurrences
+                .entrySet()
+                .stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .limit(50).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                        LinkedHashMap::new));
+        //System.out.println("done select 50 best word trigram");
+
+        //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
+        //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
+        Map<String , Integer> editionDistance = getFinalResult(input,wordsOccurrences);
+        System.out.println("-correction for " + input + " is " + editionDistance);
+    }
+
+
+    //1.
+    public static Boolean isCorrect(Set<String> dicWords, String input ){
+        if (dicWords.contains(input)){
+            System.out.println("the word is correct");
+            return true;
+            //System.exit(0);
+        }
+        return false;
+    }
+
+    //2 construire la liste de trigrame de mot M
+    public static void constructTrigramMap(String input){
+        trigrammsMap = new HashMap<>();
         List<String> inputTrigrammes = makeTrigrammes(input);
         for (String inputTrigramme : inputTrigrammes){
             trigrammsMap.put(inputTrigramme , new ArrayList<>());
         }
+    }
 
-        //3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
+    //3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
+    public static void processMapTrigram(Set<String> dicWords,List<String> associatedWords){
         for (String word : dicWords) {
             List<String> wordTrigrammes = makeTrigrammes(word);
             for (String wordTrigramme : wordTrigrammes) {
@@ -62,54 +131,39 @@ public class Main {
 
             }
         }
+    }
 
-        //4 . pour chaque mot de L, calculer son nombre d’occurrences dans les listes de mots associées
-        //aux trigrammes de M,
+    //4 . pour chaque mot de L, calculer son nombre d’occurrences dans les listes de mots associées
+    //aux trigrammes de M,
+    public static Map<String, Integer> countNbOccurrences(List<String> associatedWords){
         Map<String, Integer> wordsOccurrences  = new HashMap<>();
         for (String associatedWord : associatedWords ){
             int wordCounter = 0;
             for (String trigrammeKey : trigrammsMap.keySet() ){
-               if (trigrammsMap.get(trigrammeKey).contains(associatedWord))
-                   wordCounter++;
+                if (trigrammsMap.get(trigrammeKey).contains(associatedWord))
+                    wordCounter++;
             }
             wordsOccurrences.put(associatedWord,wordCounter);
         }
+        return wordsOccurrences;
+    }
+    //5. /
 
-        //5. sélectionner les mots du dictionnaire qui ont le plus de trigrammes communs avec M
-        List<String> result = new ArrayList<>();
-        int maxOcurence = wordsOccurrences.values().stream().max(Integer::compareTo).get();
+    //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
+    //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
 
-        wordsOccurrences = wordsOccurrences
-                .entrySet()
-                .stream()
-                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                .limit(50).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
-                                LinkedHashMap::new));
-
-        //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
-        //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
-
+    public static Map<String , Integer> getFinalResult(String input, Map<String, Integer> wordsOccurrences){
         Map<String , Integer> editionDistance = new HashMap<>();
-
         for (String wordOccurenceKey : wordsOccurrences.keySet()){
             editionDistance.put(wordOccurenceKey,distanceOfLevenshtein(wordOccurenceKey,input));
         }
         //sorting map
-        editionDistance = editionDistance
+        return editionDistance
                 .entrySet()
                 .stream()
                 .sorted(comparingByValue())
                 .limit(5).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
                         LinkedHashMap::new));
-
-        System.out.println(editionDistance);
-
-        long endTime = System.currentTimeMillis();
-
-
-
-        System.out.println(TimeUnit.MILLISECONDS.toSeconds(endTime - startTime));
-
     }
 
     public static int distanceOfLevenshtein(String w1, String w2) {
