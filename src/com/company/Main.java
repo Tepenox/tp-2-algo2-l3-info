@@ -36,8 +36,8 @@ public class Main {
         correctWord("annler",dicWords);
 
         long endTime = System.currentTimeMillis();
-
-        System.out.println(TimeUnit.MILLISECONDS.toSeconds(endTime - startTime));
+        float result = (endTime - startTime)/1000f;
+        System.out.println("Total time is "+result+ " ms");
         //TODO : Cédric run it in 6 sec, goal : run it in less
     }
 
@@ -63,26 +63,37 @@ public class Main {
     private static void correctWord(String input,Set<String> dicWords) {
 
         List<String> associatedWords = new ArrayList<>();
+        long startTime = System.currentTimeMillis();
 
         //1 est-ce que le mot est juste ?
-        if(isCorrect(dicWords,input)){
-            //System.out.println("word is true done processing");
+        if(isCorrect(dicWords,input))
             System.exit(0);
-        }
-        //System.out.println("word is wrong, im gonna show possible correction");
+        long endTime = System.currentTimeMillis();
+        float result = (endTime - startTime)/1000f;
+        System.out.println("1. done in " +result+ " ms");
+        startTime = endTime;
 
         // 2 construire la liste de trigrame de mot M
         constructTrigramMap(input);
-        //System.out.println("done contructTrigramMap");
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("2. done in " + result + " ms");
+        startTime = endTime;
 
         //3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
         processMapTrigram(dicWords,associatedWords);
-        //System.out.println("done processMapTrigram");
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("3. done in " +result + " ms");
+        startTime = endTime;
 
         //4 . pour chaque mot de L, calculer son nombre d’occurrences dans les listes de mots associées
         //aux trigrammes de M,
         Map<String, Integer> wordsOccurrences = countNbOccurrences(associatedWords);
-        //System.out.println("done count NB Ocurrences");
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("4. done in " +result + " ms");
+        startTime = endTime;
 
         //5. sélectionner les mots du dictionnaire qui ont le plus de trigrammes communs avec M
         wordsOccurrences = wordsOccurrences
@@ -91,11 +102,18 @@ public class Main {
                 .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
                 .limit(50).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
                         LinkedHashMap::new));
-        //System.out.println("done select 50 best word trigram");
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("5. done in " +result+" ms");
+        startTime = endTime;
 
         //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
         //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
         Map<String , Integer> editionDistance = getFinalResult(input,wordsOccurrences);
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("6. done in " +result+" ms");
+
         System.out.println("-correction for " + input + " is " + editionDistance);
     }
 
