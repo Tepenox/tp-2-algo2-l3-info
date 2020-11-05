@@ -12,20 +12,21 @@ public class Main {
 
 
     private static Map<String, List<String>> trigrammsMap;
+    private static List<String> trigrammsList = new ArrayList<>();
 
     public static void main(String[] args) {
 
         long startTime = System.currentTimeMillis();
 
         Set<String> dicWords = buildDicSet("C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\dico.txt");
-        /*
-        //Reading fautes.txt
+
+        /*//Reading fautes.txt
         BufferedReader reader;
         try {
             reader = new BufferedReader(new FileReader("C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\fautes.txt"));
             String line = reader.readLine();
             while (line != null) {
-
+                correctWord(line,dicWords);
                 // read next line
                 line = reader.readLine();
             }
@@ -62,7 +63,7 @@ public class Main {
 
     private static void correctWord(String input,Set<String> dicWords) {
 
-        List<String> associatedWords = new ArrayList<>();
+
         long startTime = System.currentTimeMillis();
 
         //1 est-ce que le mot est juste ?
@@ -74,13 +75,15 @@ public class Main {
         startTime = endTime;
 
         // 2 construire la liste de trigrame de mot M
-        constructTrigramMap(input);
+        //constructTrigramMap(input);
+        trigrammsList = makeTrigrammes(input);
         endTime = System.currentTimeMillis();
         result = (endTime - startTime)/1000f;
         System.out.println("2. done in " + result + " ms");
         startTime = endTime;
 
-        //3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
+        /*//3. construire la liste L des mots qui ont au moins un trigramme commun avec M,
+        List<String> associatedWords = new ArrayList<>();
         processMapTrigram(dicWords,associatedWords);
         endTime = System.currentTimeMillis();
         result = (endTime - startTime)/1000f;
@@ -93,9 +96,16 @@ public class Main {
         endTime = System.currentTimeMillis();
         result = (endTime - startTime)/1000f;
         System.out.println("4. done in " +result + " ms");
+        startTime = endTime;*/
+
+        //3.,4. and 5. merged
+        Map<String, Integer> wordsOccurrences = processMapTrigramAndCountOc(dicWords);
+        endTime = System.currentTimeMillis();
+        result = (endTime - startTime)/1000f;
+        System.out.println("3.,4. and 5. done in " +result + " ms");
         startTime = endTime;
 
-        //5. sélectionner les mots du dictionnaire qui ont le plus de trigrammes communs avec M
+        /*//5. sélectionner les mots du dictionnaire qui ont le plus de trigrammes communs avec M
         wordsOccurrences = wordsOccurrences
                 .entrySet()
                 .stream()
@@ -105,7 +115,7 @@ public class Main {
         endTime = System.currentTimeMillis();
         result = (endTime - startTime)/1000f;
         System.out.println("5. done in " +result+" ms");
-        startTime = endTime;
+        startTime = endTime;*/
 
         //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
         //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
@@ -146,7 +156,6 @@ public class Main {
                     trigrammsMap.get(wordTrigramme).add(word);
                     associatedWords.add(word);
                 }
-
             }
         }
     }
@@ -165,7 +174,28 @@ public class Main {
         }
         return wordsOccurrences;
     }
-    //5. /
+    //3,4 and 5 fusion, on va calculer le nb d'occurence en même temps que construire la liste L(qu'on ne construit pas d'ailleurs)
+    public static Map<String, Integer> processMapTrigramAndCountOc(Set<String> dicWords){
+        Map<String, Integer> wordsOccurrences  = new HashMap<>();
+        for (String word : dicWords) {
+            List<String> wordTrigrammes = makeTrigrammes(word);
+            int wordCounter = 0;
+            for (String wordTrigramme : wordTrigrammes) {
+                if (trigrammsList.contains(wordTrigramme)){
+                    wordCounter++;
+                    //trigrammsMap.get(wordTrigramme).add(word);
+                }
+            }
+            wordsOccurrences.put(word,wordCounter);
+
+        }
+        return wordsOccurrences
+                .entrySet()
+                .stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .limit(50).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                        LinkedHashMap::new));
+    }
 
     //6. déterminer les cinq mots de la sélection les plus proches de M au sens de la distance
     //d’édition. L’utilisateur choisira parmis ces 5 mots celui qui lui convient.
@@ -218,12 +248,8 @@ public class Main {
     public static List<String> makeTrigrammes(String w1) {
         List<String> results = new ArrayList<>();
         w1 = "<".concat(w1).concat(">");
-        for (int i = 0; i < w1.length(); i++) {
-            try {
-                results.add(w1.substring(i, i + 3));
-            } catch (StringIndexOutOfBoundsException e) {
-                break;
-            }
+        for (int i = 0; i < w1.length() - 2; i++) {
+            results.add(w1.substring(i, i + 3));
         }
         return results;
     }
