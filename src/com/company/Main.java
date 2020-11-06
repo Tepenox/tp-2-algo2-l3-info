@@ -16,11 +16,13 @@ public class Main {
 
         String URLOfDico = "C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\dico.txt";
         String URLOfFautes = "C:\\Users\\Cédric\\IdeaProjects\\tp-2-algo2-l3-info\\src\\com\\company\\fautes.txt";
+
+        long startTime = System.currentTimeMillis(); //start of chronos
         //====================First : build trigrammsMapOfDico=================================
         prepareMap(URLOfDico);
 
         //====================Then : start correction of all word one by one===================
-        long startTime = System.currentTimeMillis(); //start of chronos
+
         //Reading fautes.txt
         BufferedReader readerDico;
         try {
